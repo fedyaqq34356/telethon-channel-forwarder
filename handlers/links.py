@@ -1,55 +1,55 @@
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
-from states import LinkChannels
-from keyboards import main_menu, cancel_menu
+from states import Link
+from keyboards import main, cancel
 from storage import storage
 
 router = Router()
 
 
 @router.message(F.text == "🔗 Зв'язати канали")
-async def link_channels_start(message: Message, state: FSMContext):
+async def link_start(message: Message, state: FSMContext):
     if not storage.source_channels:
-        await message.answer("❌ Немає каналів-джерел!")
+        await message.answer("Немає джерел")
         return
     
     if not storage.target_channels:
-        await message.answer("❌ Немає каналів-отримувачів!")
+        await message.answer("Немає отримувачів")
         return
     
-    await state.set_state(LinkChannels.choosing_source)
+    await state.set_state(Link.source)
     
-    text = "Виберіть канал-джерело (відправте номер):\n\n"
-    for i, channel in enumerate(storage.source_channels, 1):
-        text += f"{i}. {channel}\n"
+    text = "Виберіть джерело (номер):\n\n"
+    for i, ch in enumerate(storage.source_channels, 1):
+        text += f"{i}. {ch}\n"
     
-    await message.answer(text, reply_markup=cancel_menu())
+    await message.answer(text, reply_markup=cancel())
 
 
-@router.message(LinkChannels.choosing_source, F.text.regexp(r"^\d+$"))
-async def process_source_choice(message: Message, state: FSMContext):
+@router.message(Link.source, F.text.regexp(r"^\d+$"))
+async def process_source(message: Message, state: FSMContext):
     try:
         idx = int(message.text) - 1
         
         if 0 <= idx < len(storage.source_channels):
             source = storage.source_channels[idx]
             await state.update_data(source=source)
-            await state.set_state(LinkChannels.choosing_target)
+            await state.set_state(Link.target)
             
-            text = f"Джерело: {source}\n\nВиберіть канал-отримувач (відправте номер):\n\n"
-            for i, channel in enumerate(storage.target_channels, 1):
-                text += f"{i}. {channel}\n"
+            text = f"Джерело: {source}\n\nВиберіть отримувач (номер):\n\n"
+            for i, ch in enumerate(storage.target_channels, 1):
+                text += f"{i}. {ch}\n"
             
-            await message.answer(text, reply_markup=cancel_menu())
+            await message.answer(text, reply_markup=cancel())
         else:
-            await message.answer("❌ Невірний номер!")
+            await message.answer("Невірний номер")
     except ValueError:
-        await message.answer("❌ Помилка вводу!")
+        await message.answer("Помилка вводу")
 
 
-@router.message(LinkChannels.choosing_target, F.text.regexp(r"^\d+$"))
-async def process_target_choice(message: Message, state: FSMContext):
+@router.message(Link.target, F.text.regexp(r"^\d+$"))
+async def process_target(message: Message, state: FSMContext):
     try:
         idx = int(message.text) - 1
         
@@ -60,71 +60,65 @@ async def process_target_choice(message: Message, state: FSMContext):
             
             link = {"source": source, "target": target}
             
-            if link in storage.channel_links:
+            if link in storage.links:
                 await state.clear()
-                await message.answer("❌ Цей зв'язок вже існує!", reply_markup=main_menu())
+                await message.answer("Зв'язок існує", reply_markup=main())
                 return
             
-            storage.channel_links.append(link)
-            storage.save_data()
-            
+            storage.add_link(source, target)
             await state.clear()
             await message.answer(
-                f"✅ Зв'язок створено!\n\n"
-                f"📺 Джерело: {source}\n"
-                f"📤 Отримувач: {target}",
-                reply_markup=main_menu()
+                f"✅ Зв'язок створено\n\n📺 {source}\n📤 {target}",
+                reply_markup=main()
             )
         else:
-            await message.answer("❌ Невірний номер!")
+            await message.answer("Невірний номер")
     except ValueError:
-        await message.answer("❌ Помилка вводу!")
+        await message.answer("Помилка вводу")
 
 
 @router.message(F.text == "📜 Список зв'язків")
-async def show_links(message: Message):
-    if not storage.channel_links:
-        await message.answer("❌ Немає зв'язків між каналами")
+async def list_links(message: Message):
+    if not storage.links:
+        await message.answer("Немає зв'язків")
         return
     
-    text = "📜 <b>Список зв'язків:</b>\n\n"
-    
-    for i, link in enumerate(storage.channel_links, 1):
+    text = "📜 <b>Зв'язки:</b>\n\n"
+    for i, link in enumerate(storage.links, 1):
         text += f"{i}. 📺 {link['source']}\n   ⬇️\n   📤 {link['target']}\n\n"
     
     await message.answer(text, parse_mode="HTML")
 
 
 @router.message(F.text == "🗑 Видалити зв'язок")
-async def delete_link_start(message: Message):
-    if not storage.channel_links:
-        await message.answer("❌ Немає зв'язків для видалення")
+async def delete_link(message: Message, state: FSMContext):
+    if not storage.links:
+        await message.answer("Немає зв'язків")
         return
     
-    text = "Виберіть зв'язок для видалення (відправте номер):\n\n"
+    await state.set_state(Link.delete_choice)
     
-    for i, link in enumerate(storage.channel_links, 1):
+    text = "Виберіть зв'язок (номер):\n\n"
+    for i, link in enumerate(storage.links, 1):
         text += f"{i}. 📺 {link['source']} → 📤 {link['target']}\n"
     
-    await message.answer(text, reply_markup=cancel_menu())
+    await message.answer(text, reply_markup=cancel())
 
 
-@router.message(F.text.regexp(r"^\d+$"), ~F.state())
-async def process_link_deletion(message: Message):
-    if not storage.channel_links:
-        return
-    
+@router.message(Link.delete_choice, F.text.regexp(r"^\d+$"))
+async def process_link_delete(message: Message, state: FSMContext):
     try:
         idx = int(message.text) - 1
         
-        if 0 <= idx < len(storage.channel_links):
-            link = storage.channel_links.pop(idx)
-            storage.save_data()
+        if 0 <= idx < len(storage.links):
+            link = storage.links[idx]
+            storage.remove_link(idx)
+            await state.clear()
             await message.answer(
-                f"✅ Зв'язок видалено!\n\n"
-                f"📺 {link['source']}\n"
-                f"📤 {link['target']}",
-                reply_markup=main_menu()
+                f"✅ Зв'язок видалено\n\n📺 {link['source']}\n📤 {link['target']}",
+                reply_markup=main()
             )
-    except:
-        pass
+        else:
+            await message.answer("Невірний номер")
+    except ValueError:
+        await message.answer("Помилка вводу")
