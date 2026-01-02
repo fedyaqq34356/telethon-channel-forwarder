@@ -1,6 +1,7 @@
 import os
+from dotenv import load_dotenv
 
-API_ID = int(os.getenv('API_ID'))
-API_HASH = os.getenv('API_HASH')
-SOURCE_CHANNEL = os.getenv('SOURCE_CHANNEL')
-TARGET_CHANNEL = os.getenv('TARGET_CHANNEL')
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
