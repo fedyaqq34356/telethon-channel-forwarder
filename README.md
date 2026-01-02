@@ -572,4 +572,5 @@ Submit pull requests to main branch.
 
 ## Author
 Built with Python, Telethon, and Aiogram.
+
 Repository: https://github.com/fedyaqq34356/telethon-channel-forwarder
