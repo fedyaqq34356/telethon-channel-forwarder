@@ -3,3 +3,5 @@
 *.session
 *.session-journal
 /__pycache__
+data.json
+/handlers/__pycache__
