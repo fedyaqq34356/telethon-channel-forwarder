@@ -1,11 +1,26 @@
 import asyncio
-from config import API_ID, API_HASH, SOURCE_CHANNEL, TARGET_CHANNEL
-from client import create_client
-from forwarder import setup_forwarder
+import logging
+from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage
+from config import BOT_TOKEN
+from handlers import accounts, channels, forwarding, links
+
 
 async def main():
-    async with create_client(API_ID, API_HASH) as client:
-        await setup_forwarder(client, source=SOURCE_CHANNEL, target=TARGET_CHANNEL)
-        await client.run_until_disconnected()
+    logging.basicConfig(level=logging.INFO)
+    
+    bot = Bot(token=BOT_TOKEN)
+    storage = MemoryStorage()
+    dp = Dispatcher(storage=storage)
+    
+    dp.include_router(links.router)
+    dp.include_router(channels.router)
+    dp.include_router(accounts.router)
+    dp.include_router(forwarding.router)
+    
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
 
-asyncio.run(main())
+
+if __name__ == "__main__":
+    asyncio.run(main())
