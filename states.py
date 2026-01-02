@@ -1,28 +1,24 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class AddAccount(StatesGroup):
-    waiting_session_name = State()
-    waiting_api_id = State()
-    waiting_api_hash = State()
-    waiting_phone = State()
-    waiting_code = State()
-    waiting_password = State()
+class Account(StatesGroup):
+    session_name = State()
+    api_id = State()
+    api_hash = State()
+    phone = State()
+    code = State()
+    password = State()
+    delete_choice = State()
 
 
-class AddSourceChannel(StatesGroup):
-    waiting_username = State()
+class Channel(StatesGroup):
+    source = State()
+    target = State()
+    delete_type = State()
+    delete_choice = State()
 
 
-class AddTargetChannel(StatesGroup):
-    waiting_username = State()
-
-
-class DeleteChannel(StatesGroup):
-    choosing_type = State()
-    choosing_channel = State()
-
-
-class LinkChannels(StatesGroup):
-    choosing_source = State()
-    choosing_target = State()
+class Link(StatesGroup):
+    source = State()
+    target = State()
+    delete_choice = State()
