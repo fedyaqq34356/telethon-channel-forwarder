@@ -20,9 +20,7 @@ async def setup(client, source, targets):
         
         for target in target_entities:
             try:
-                # Проверяем тип медиа
                 if msg.media and isinstance(msg.media, MessageMediaWebPage):
-                    # Для веб-превью отправляем как обычное сообщение
                     await client.send_message(
                         target,
                         msg.message,
@@ -31,7 +29,6 @@ async def setup(client, source, targets):
                         link_preview=True
                     )
                 elif msg.media:
-                    # Для других типов медиа (фото, видео, документы и т.д.)
                     await client.send_file(
                         target,
                         msg.media,
@@ -40,7 +37,6 @@ async def setup(client, source, targets):
                         formatting_entities=msg.entities
                     )
                 else:
-                    # Обычное текстовое сообщение
                     await client.send_message(
                         target,
                         msg.message,
