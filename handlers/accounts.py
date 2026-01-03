@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from states import Account
 from keyboards import main, cancel
-from auth import start, verify_code, verify_password, cancel as cancel_auth, get_client
+from auth import start, verify_code, verify_password, cancel as cancel_auth, disconnect_client
 from storage import storage
 
 router = Router()
@@ -154,9 +154,7 @@ async def process_delete(message: Message, state: FSMContext):
             name = names[idx]
             
             try:
-                acc = storage.accounts[name]
-                client = await get_client(name, acc["api_id"], acc["api_hash"])
-                await client.disconnect()
+                await disconnect_client(name)
             except:
                 pass
             
