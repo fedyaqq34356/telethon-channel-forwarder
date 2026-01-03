@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from storage import storage
 from keyboards import main
-from auth import get_client
+from auth import get_client, disconnect_client
 from forwarder import setup
 from logger import logger
 from pathlib import Path
@@ -50,8 +50,7 @@ async def start_forwarding(message: Message):
                 f"❌ Акаунт '{account_name}' не авторизований\n\n"
                 "Видаліть акаунт та додайте заново."
             )
-            if client.is_connected():
-                await client.disconnect()
+            await disconnect_client(account_name)
             logger.error(f"Акаунт не авторизований: {account_name}")
             return
         
@@ -102,14 +101,12 @@ async def stop_forwarding(message: Message):
     
     try:
         forwarder = storage.active_forwarders[user_id]
-        client = forwarder["client"]
+        account_name = forwarder["account"]
         
-        if client.is_connected():
-            await client.disconnect()
-        
+        await disconnect_client(account_name)
         del storage.active_forwarders[user_id]
         
-        logger.info(f"Зупинено пересилання для {forwarder['account']}")
+        logger.info(f"Зупинено пересилання для {account_name}")
         await message.answer("✅ Пересилання зупинено", reply_markup=main())
     except Exception as e:
         logger.error(f"Помилка зупинки: {e}", exc_info=True)
