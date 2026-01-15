@@ -69,6 +69,10 @@ async def setup(client, source, targets):
     async def handler(event):
         msg = event.message
         
+        if msg.message and '@relax_adminz' in msg.message.lower():
+            logger.info(f"Пропущено повідомлення з @relax_adminz від {source}")
+            return
+        
         for target in target_entities:
             try:
                 if msg.media and isinstance(msg.media, MessageMediaWebPage):
