@@ -85,28 +85,39 @@ async def setup(client, source, targets):
         
         message_cache[cache_key] = True
         
+        source_name = getattr(source_entity, 'username', None)
+        if source_name:
+            source_label = f"@{source_name}"
+        else:
+            source_label = getattr(source_entity, 'title', source)
+        
+        footer = f"\n\n📺 Джерело: {source_label}"
+        
         for target in target_entities:
             try:
                 if msg.media and isinstance(msg.media, MessageMediaWebPage):
+                    new_text = (msg.message or "") + footer
                     await client.send_message(
                         target,
-                        msg.message,
+                        new_text,
                         parse_mode="html" if msg.entities else None,
                         formatting_entities=msg.entities,
                         link_preview=True
                     )
                 elif msg.media:
+                    new_caption = (msg.message or "") + footer
                     await client.send_file(
                         target,
                         msg.media,
-                        caption=msg.message,
+                        caption=new_caption,
                         parse_mode="html" if msg.entities else None,
                         formatting_entities=msg.entities
                     )
                 else:
+                    new_text = (msg.message or "") + footer
                     await client.send_message(
                         target,
-                        msg.message,
+                        new_text,
                         parse_mode="html" if msg.entities else None,
                         formatting_entities=msg.entities,
                         link_preview=False
