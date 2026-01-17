@@ -83,8 +83,8 @@ async def process_phone(message: Message, state: FSMContext):
 async def process_code(message: Message, state: FSMContext):
     digits = [d.strip() for d in message.text.split() if d.strip().isdigit()]
     
-    if len(digits) != 5:
-        await message.answer("Код має містити 5 цифр через пробіл")
+    if len(digits) != 5 and len(digits) != 6:
+        await message.answer("Код має містити 5 абл 6 цифр через пробіл")
         return
     
     code = "".join(digits)
