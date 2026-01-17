@@ -3,6 +3,9 @@ from telethon.tl.types import MessageMediaWebPage
 from logger import logger
 
 
+message_cache = {}
+
+
 async def setup(client, source, targets):
     await client.get_dialogs()
     
@@ -73,6 +76,15 @@ async def setup(client, source, targets):
             logger.info(f"Пропущено повідомлення з @relax_adminz від {source}")
             return
         
+        msg_text = msg.message or ""
+        cache_key = f"{source}:{msg_text[:100]}"
+        
+        if cache_key in message_cache:
+            logger.info(f"Пропущено дублікат: {cache_key}")
+            return
+        
+        message_cache[cache_key] = True
+        
         for target in target_entities:
             try:
                 if msg.media and isinstance(msg.media, MessageMediaWebPage):
@@ -102,3 +114,6 @@ async def setup(client, source, targets):
                 logger.info(f"Переслано: {source} → {target.id}")
             except Exception as e:
                 logger.error(f"Помилка пересилання до {target.id}: {e}")
+        
+        if len(message_cache) > 1000:
+            message_cache.clear()
